@@ -21,7 +21,6 @@ export default function ProductCreationPage() {
     const [selectedFeature, setSelectedFeature] = useState('');
     const [uzbekFeedback, setUzbekFeedback] = useState('');
     const [russianFeedback, setRussianFeedback] = useState('');
-    const { option } = Select;
 
 
 
