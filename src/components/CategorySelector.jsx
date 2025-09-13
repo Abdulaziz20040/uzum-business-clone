@@ -6,7 +6,6 @@ export function CategorySelector() {
     const [level2, setLevel2] = useState('');
     const [level3, setLevel3] = useState('');
     const [level4, setLevel4] = useState('');
-    const { option } = Select;
 
 
     const categories = {
