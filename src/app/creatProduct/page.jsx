@@ -22,7 +22,7 @@ export default function ProductCreationPage() {
     const [uzbekFeedback, setUzbekFeedback] = useState('');
     const [russianFeedback, setRussianFeedback] = useState('');
 
-    const { Option } = Select;
+    const { d } = Select;
 
 
 
@@ -481,7 +481,7 @@ export default function ProductCreationPage() {
                                     value={selectedFeature}
                                     onChange={(e) => setSelectedFeature(e.target.value)}
                                 >
-                                    <option value="">Xususiyat qo'shish</option>
+                                    <option option value="">Xususiyat qo'shish</option>
                                     <option value="size">O'lcham</option>
                                     <option value="color">Rang</option>
                                     <option value="material">Material</option>
