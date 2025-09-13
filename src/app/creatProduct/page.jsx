@@ -8,8 +8,6 @@ import { CategorySelector } from '@/components/CategorySelector';
 import { FaAngleDown } from "react-icons/fa6";
 
 
-const { Option } = Select;
-
 export default function ProductCreationPage() {
     const [nameUz, setNameUz] = useState('');
     const [nameRu, setNameRu] = useState('');
@@ -23,6 +21,9 @@ export default function ProductCreationPage() {
     const [selectedFeature, setSelectedFeature] = useState('');
     const [uzbekFeedback, setUzbekFeedback] = useState('');
     const [russianFeedback, setRussianFeedback] = useState('');
+
+    const { Option } = Select;
+
 
 
     // --- Har bir editor uchun ref ---
