@@ -1,6 +1,7 @@
 "use client"
 import React, { useState } from 'react';
 import { Search, MoreHorizontal, Grid, List, RefreshCw, Plus, Rocket, Info } from 'lucide-react';
+import Link from 'next/link';
 
 const ProductManagement = () => {
   const [activeTab, setActiveTab] = useState('all');
@@ -274,10 +275,12 @@ const ProductManagement = () => {
               <RefreshCw size={16} />
               Narxlarni yangilash
             </button>
-            <button className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors">
-              <Plus size={16} />
-              Tovar kartochkasini yaratish
-            </button>
+            <Link href={"/creatProduct"}>
+              <button className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors">
+                <Plus size={16} />
+                Tovar kartochkasini yaratish
+              </button>
+            </Link>
           </div>
         </div>
       </div>
