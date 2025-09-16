@@ -1,12 +1,15 @@
 import { Button, Select } from "antd";
 import { useState } from "react";
+import { RightOutlined } from '@ant-design/icons';
 
-export function CategorySelector() {
+const { Option } = Select;
+
+export function CategorySelector({ onSubmit }) {
     const [level1, setLevel1] = useState('');
     const [level2, setLevel2] = useState('');
     const [level3, setLevel3] = useState('');
     const [level4, setLevel4] = useState('');
-
+    const [submitted, setSubmitted] = useState(false);
 
     const categories = {
         electronics: {
@@ -21,18 +24,6 @@ export function CategorySelector() {
                                 iphone: 'iPhone',
                                 samsung: 'Samsung',
                                 xiaomi: 'Xiaomi'
-                            }
-                        }
-                    }
-                },
-                computers: {
-                    label: 'Kompyuterlar',
-                    subcategories: {
-                        laptops: {
-                            label: 'Noutbuklar',
-                            subcategories: {
-                                gaming: 'Gaming',
-                                office: 'Ofis'
                             }
                         }
                     }
@@ -53,106 +44,91 @@ export function CategorySelector() {
                             }
                         }
                     }
-                },
-                womens: {
-                    label: 'Ayollar kiyimi',
-                    subcategories: {
-                        dresses: {
-                            label: 'Ko\'ylaklar',
-                            subcategories: {
-                                summer: 'Yozgi',
-                                winter: 'Qishki'
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        books: {
-            label: 'Kitoblar',
-            subcategories: {
-                fiction: {
-                    label: 'Badiiy adabiyot',
-                    subcategories: {
-                        novels: {
-                            label: 'Romanlar',
-                            subcategories: {
-                                classic: 'Klassik',
-                                modern: 'Zamonaviy'
-                            }
-                        }
-                    }
-                },
-                technical: {
-                    label: 'Texnik kitoblar',
-                    subcategories: {
-                        programming: {
-                            label: 'Dasturlash',
-                            subcategories: {
-                                javascript: 'JavaScript',
-                                python: 'Python'
-                            }
-                        }
-                    }
                 }
             }
         }
     };
 
-    const handleLevel1Change = (value) => {
-        setLevel1(value);
-        setLevel2('');
-        setLevel3('');
-        setLevel4('');
+
+    const handleSubmit = () => {
+        if (level1 && level2 && level3 && level4) {
+            setSubmitted(true);
+            onSubmit(); // Qabul qilinganini StepOn ga bildiradi
+        }
     };
 
-    const handleLevel2Change = (value) => {
-        setLevel2(value);
-        setLevel3('');
-        setLevel4('');
-    };
+    const handleEdit = () => setSubmitted(false);
 
-    const handleLevel3Change = (value) => {
-        setLevel3(value);
-        setLevel4('');
-    };
+    if (submitted) {
+        const path = [
+            categories[level1].label,
+            categories[level1].subcategories[level2].label,
+            categories[level1].subcategories[level2].subcategories[level3].label,
+            categories[level1].subcategories[level2].subcategories[level3].subcategories[level4]
+        ];
 
-    const handleLevel4Change = (value) => {
-        setLevel4(value);
-    };
+        return (
+            <div className="mt-4 flex flex-col gap-2">
+                {/* Breadcrumb style */}
+                <div className="flex items-center gap-1 flex-wrap text-gray-700 font-medium">
+                    {path.map((item, index) => (
+                        <span key={index} className="flex items-center gap-1">
+                            <span>{item}</span>
+                            {index < path.length - 1 && <RightOutlined style={{ fontSize: '12px', color: '#7000FF' }} />}
+                        </span>
+                    ))}
+                </div>
 
-    const isButtonActive = level1 && level2 && level3 && level4;
+                {/* O'zgartirish tugmasi */}
+                <Button
+                    onClick={handleEdit}
+                    className="mt-2 w-[107.85px] h-[40px]"
+                    style={{
+                        backgroundColor: "black",
+                        color: "white"
+                    }}
+                >
+                    O'zgartirish
+                </Button>
+            </div>
+        );
+    }
 
     return (
-        <div>
+        <div className="flex flex-col gap-4">
             {/* Level 1 */}
             <Select
+                className="w-[400px]"
                 placeholder="Toifani tanlang"
-                className="w-full max-w-md"
                 size="large"
-                value={level1}
-                onChange={handleLevel1Change}
+                value={level1 || undefined}
+                onChange={(value) => {
+                    setLevel1(value);
+                    setLevel2('');
+                    setLevel3('');
+                    setLevel4('');
+                }}
             >
-                {Object.entries(categories).map(([key, category]) => (
-                    <Option key={key} value={key}>
-                        {category.label}
-                    </Option>
+                {Object.entries(categories).map(([key, cat]) => (
+                    <Option key={key} value={key}>{cat.label}</Option>
                 ))}
             </Select>
 
             {/* Level 2 */}
             {level1 && (
                 <Select
+                    className="w-[400px]"
                     placeholder="Ichki toifani tanlang"
-                    className="w-full max-w-md absolute top-4"
                     size="large"
-                    value={level2}
-                    onChange={handleLevel2Change}
+                    value={level2 || undefined}
+                    onChange={(value) => {
+                        setLevel2(value);
+                        setLevel3('');
+                        setLevel4('');
+                    }}
                 >
-                    {Object.entries(categories[level1].subcategories).map(([key, subcategory]) => (
-                        <Option key={key} value={key}>
-                            {subcategory.label}
-                        </Option>
+                    {Object.entries(categories[level1].subcategories).map(([key, cat]) => (
+                        <Option key={key} value={key}>{cat.label}</Option>
                     ))}
                 </Select>
             )}
@@ -160,16 +136,17 @@ export function CategorySelector() {
             {/* Level 3 */}
             {level2 && (
                 <Select
+                    className="w-[400px]"
                     placeholder="Ichki toifani tanlang"
-                    className="w-full max-w-md absolute top-8"
                     size="large"
-                    value={level3}
-                    onChange={handleLevel3Change}
+                    value={level3 || undefined}
+                    onChange={(value) => {
+                        setLevel3(value);
+                        setLevel4('');
+                    }}
                 >
-                    {Object.entries(categories[level1].subcategories[level2].subcategories).map(([key, subcategory]) => (
-                        <Option key={key} value={key}>
-                            {subcategory.label}
-                        </Option>
+                    {Object.entries(categories[level1].subcategories[level2].subcategories).map(([key, cat]) => (
+                        <Option key={key} value={key}>{cat.label}</Option>
                     ))}
                 </Select>
             )}
@@ -177,37 +154,28 @@ export function CategorySelector() {
             {/* Level 4 */}
             {level3 && (
                 <Select
+                    className="w-[400px]"
                     placeholder="Ichki toifani tanlang"
-                    className="w-full max-w-md  absolute top-12"
                     size="large"
-                    value={level4}
-                    onChange={handleLevel4Change}
+                    value={level4 || undefined}
+                    onChange={setLevel4}
                 >
-                    {Object.entries(categories[level1].subcategories[level2].subcategories[level3].subcategories).map(([key, subcategory]) => (
-                        <Option key={key} value={key}>
-                            {subcategory}
-                        </Option>
+                    {Object.entries(categories[level1].subcategories[level2].subcategories[level3].subcategories).map(([key, label]) => (
+                        <Option key={key} value={key}>{label}</Option>
                     ))}
                 </Select>
             )}
 
-            {/* Submit Button */}
-            <div className="mt-20">
-                <Button
-                    size="large"
-                    className={`${isButtonActive
-                        ? 'text-white border-0'
-                        : 'bg-gray-100 border-gray-300 text-gray-700'
-                        }`}
-                    style={{
-                        backgroundColor: isButtonActive ? '#7000FF' : undefined,
-                        color: isButtonActive ? 'white' : undefined,
-                    }}
-                    disabled={!isButtonActive}
-                >
-                    Qabul qilish
-                </Button>
-            </div>
+            {/* Qabul qilish tugmasi */}
+            <Button
+                className="w-[107.85px] h-[40px]"
+                size="large"
+                type="primary"
+                onClick={handleSubmit}
+                disabled={!(level1 && level2 && level3 && level4)}
+            >
+                Qabul qilish
+            </Button>
         </div>
     );
 }

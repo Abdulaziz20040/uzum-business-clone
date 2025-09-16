@@ -1,59 +1,135 @@
+// StepOn.jsx
 'use client'
 
-import React, { useRef, useState } from 'react';
-import { Select, Input, Dropdown, Menu, Checkbox } from 'antd';
+import React, { useRef, useState, useEffect } from 'react';
+import { Select, Input, Dropdown, Menu, Checkbox, message, Button } from 'antd';
 import "../app/globals.css"
-import { Bold, ChevronDown, ImageIcon, Italic, Link, Pilcrow, Plus, Redo, Undo } from 'lucide-react';
+import { Bold, ImageIcon, Italic, Link, Plus, Redo, Undo } from 'lucide-react';
 import { CategorySelector } from '@/components/CategorySelector';
 import { FaAngleDown } from "react-icons/fa6";
+import Product360Upload from './Product360Upload';
+import ProductFeatures from './ProductFeatures';
+import ProductDetails from './ProductDetails';
+import ProductCertificates from './ProductCertificates';
+import FeatureSelection from './FeatureSelection';
+import SizeGrid from './SizeGrid';
+import ProductImages from './ProductImages';
 
+const { Option } = Select;
 
-export default function StepOn() {
-    const [nameUz, setNameUz] = useState('');
-    const [nameRu, setNameRu] = useState('');
-    const [uzbekDescription, setUzbekDescription] = useState('');
-    const [russianDescription, setRussianDescription] = useState('');
-    const [selectedFiles, setSelectedFiles] = useState([]);
-    const [uzbekDescription1, setUzbekDescription1] = useState("");
-    const [russianDescription1, setRussianDescription1] = useState("");
-    const [videoFile, setVideoFile] = useState(null);
-    const [imageFile, setImageFile] = useState(null);
-    const [selectedFeature, setSelectedFeature] = useState('');
-    const [uzbekFeedback, setUzbekFeedback] = useState('');
+export default function StepOn({ formData, setFormData }) {
+    // --- State’larni props orqali boshqarish ---
+    const [nameUz, setNameUz] = useState(formData.nameUz || '');
+    const [nameRu, setNameRu] = useState(formData.nameRu || '');
+    const [uzbekDescription, setUzbekDescription] = useState(formData.uzbekDescription || '');
+    const [russianDescription, setRussianDescription] = useState(formData.russianDescription || '');
+    const [selectedFiles, setSelectedFiles] = useState(formData.selectedFiles || []);
+    const [uzbekDescription1, setUzbekDescription1] = useState(formData.uzbekDescription1 || "");
+    const [russianDescription1, setRussianDescription1] = useState(formData.russianDescription1 || "");
+    const [videoFile, setVideoFile] = useState(formData.videoFile || null);
+    const [imageFile, setImageFile] = useState(formData.imageFile || null);
+    const [selectedFeature, setSelectedFeature] = useState(formData.selectedFeature || '');
+    const [uzbekFeedback, setUzbekFeedback] = useState(formData.uzbekFeedback || '');
+    const [russianFeedback, setRussianFeedback] = useState(formData.russianFeedback || '');
+    const [country, setCountry] = useState(formData.country || null);
+    const [brand, setBrand] = useState(formData.brand || null);
+    const [model, setModel] = useState(formData.model || '');
+    const [guarantee, setGuarantee] = useState(formData.guarantee || '');
+    const [categorySelected, setCategorySelected] = useState(formData.categorySelected || false);
     const [disabled, setDisabled] = useState(false);
+    // State alohida, har bir select uchun
+    const [countryDisabled, setCountryDisabled] = useState(false);
+    const [brandDisabled, setBrandDisabled] = useState(false);
+    const [modelDisabled, setModelDisabled] = useState(false);
 
-    const [russianFeedback, setRussianFeedback] = useState('');
+    const [images, setImages] = useState([]);
+    const [createdProductId, setCreatedProductId] = useState(null);
+
+    useEffect(() => {
+        setFormData({
+            ...formData,
+            nameUz,
+            nameRu,
+            uzbekDescription,
+            russianDescription,
+            uzbekDescription1,
+            russianDescription1,
+            selectedFiles,
+            videoFile,
+            imageFile,
+            selectedFeature,
+            uzbekFeedback,
+            russianFeedback,
+            country,
+            brand,
+            model,
+            guarantee,
+            categorySelected,
+        });
+    }, [
+        nameUz, nameRu, uzbekDescription, russianDescription,
+        uzbekDescription1, russianDescription1,
+        selectedFiles, videoFile, imageFile,
+        selectedFeature, uzbekFeedback, russianFeedback,
+        country, brand, model, guarantee, categorySelected,
+    ]);
+
+
+    const handleVideoUpload = (event) => {
+        const file = event.target.files[0];
+        if (file) setVideoFile(file); // va formData useEffect orqali yangilanadi
+    };
+
+    const handleImageUpload = (event) => {
+        const file = event.target.files[0];
+        if (file) setImageFile(file); // va formData useEffect orqali yangilanadi
+    };
+
+    const handleFileChange = (e) => {
+        const files = Array.from(e.target.files);
+        setSelectedFiles(prev => [...prev, ...files]); // formData update
+    };
+
+
+    // Tovar yaratish
+    const handleSubmit = async (formData) => {
+        const res = await fetch("https://1b91559cc9edc1c6.mokky.dev/card", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(formData)
+        });
+        const data = await res.json();
+        setCreatedProductId(data.id); // API dan kelgan avtomatik ID
+    };
 
 
 
+    // --- Category selector submit ---
+    const handleCategorySubmit = () => {
+        setCategorySelected(true);
+    };
 
-    // --- Har bir editor uchun ref ---
+    // --- Editor ref ---
     const uzbekEditorRef = useRef(null);
     const russianEditorRef = useRef(null);
 
-    // Fayl tanlash
-    const handleFileChange = (e) => {
-        const files = Array.from(e.target.files);
-        setSelectedFiles((prev) => [...prev, ...files]);
-    };
+
 
     const removeFile = (index) => {
         setSelectedFiles(prev => prev.filter((_, i) => i !== index));
     };
 
-    // --- Matn formatlash funksiyasi ---
+    // --- Text formatting ---
     const formatText = (command, value = null) => {
         if (command === "createLink") {
             const url = prompt("Havola URL manzilini kiriting:");
-            if (url) {
-                document.execCommand(command, false, url);
-            }
+            if (url) document.execCommand(command, false, url);
         } else {
             document.execCommand(command, false, value);
         }
     };
 
-    // --- Fayldan rasm qo‘shish ---
+    // --- Insert image from file ---
     const insertImageFromFile = (e, editorRef, setState) => {
         const file = e.target.files[0];
         if (file && file.type.startsWith("image/")) {
@@ -71,43 +147,16 @@ export default function StepOn() {
 
     const paragraphMenu = (formatText) => (
         <Menu>
-            <Menu.Item key="p" onClick={() => formatText("formatBlock", "<p>")}>
-                Paragraph
-            </Menu.Item>
-            <Menu.Item key="h2" onClick={() => formatText("formatBlock", "<h2>")}>
-                Heading 2
-            </Menu.Item>
-            <Menu.Item key="h3" onClick={() => formatText("formatBlock", "<h3>")}>
-                Heading 3
-            </Menu.Item>
-            <Menu.Item key="h4" onClick={() => formatText("formatBlock", "<h4>")}>
-                Heading 4
-            </Menu.Item>
+            <Menu.Item key="p" onClick={() => formatText("formatBlock", "<p>")}>Paragraph</Menu.Item>
+            <Menu.Item key="h2" onClick={() => formatText("formatBlock", "<h2>")}>Heading 2</Menu.Item>
+            <Menu.Item key="h3" onClick={() => formatText("formatBlock", "<h3>")}>Heading 3</Menu.Item>
+            <Menu.Item key="h4" onClick={() => formatText("formatBlock", "<h4>")}>Heading 4</Menu.Item>
         </Menu>
     );
 
 
-
-
-    const handleVideoUpload = (event) => {
-        const file = event.target.files[0];
-        if (file) {
-            setVideoFile(file);
-        }
-    };
-
-    const handleImageUpload = (event) => {
-        const file = event.target.files[0];
-        if (file) {
-            setImageFile(file);
-        }
-    };
-
     return (
         <div className="bg-gray-50 h-full">
-
-
-            {/* Main Content */}
             <div className="px-6 h-[74vh] hide-scrollbar overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                 <div className="max-w-6xl mx-auto">
                     {/* Required fields notice */}
@@ -127,8 +176,12 @@ export default function StepOn() {
                                 Yo'riqnomada batafsil
                             </div>
                         </div>
-                        <CategorySelector />
+                        {!categorySelected && (
+                            <CategorySelector onSubmit={handleCategorySubmit} />
+                        )}
                     </div>
+
+
 
                     {/* Product Name */}
                     <div className="mb-8 bg-white rounded-lg p-6">
@@ -231,236 +284,229 @@ export default function StepOn() {
                         </div>
                     </div>
 
-                    {/* Ishlab chiqarilgan mamlakat */}
-                    <div className="bg-white rounded-lg p-6 mb-8">
-                        {/* Title */}
-                        <h2 className="text-lg font-semibold text-black mb-3">
-                            Ishlab chiqarilgan mamlakat
-                        </h2>
 
-                        {/* Select */}
-                        <Select
-                            placeholder="Mamlakatni tanlang"
-                            disabled={disabled}
-                            style={{
-                                width: 380, // uzunligi rasmga yaqinlashtirilgan
-                                height: 45,
-                            }}
-                        >
-                            <Option value="uz">O‘zbekiston</Option>
-                            <Option value="ru">Rossiya</Option>
-                            <Option value="us">AQSH</Option>
-                        </Select>
+                    {categorySelected && (
+                        <div>
 
-                        {/* Checkbox */}
-                        <div className="mt-4">
-                            <Checkbox
-                                checked={disabled}
-                                onChange={(e) => setDisabled(e.target.checked)}
-                                style={{
-                                    fontSize: 14,
-                                    color: "black",
-                                }}
-                            >
-                                Mavjud emas ishlab chiqarilgan mamlakat
-                            </Checkbox>
-                        </div>
-                    </div>
+                            {/* Ishlab chiqarilgan mamlakat */}
+                            <div className="bg-white rounded-lg p-6 mb-8">
+                                {/* Title */}
+                                <h2 className="text-lg font-semibold text-black mb-3">
+                                    Ishlab chiqarilgan mamlakat
+                                </h2>
 
-                    {/* Brend */}
-                    <div className="bg-white rounded-lg p-6 mb-8">
-                        {/* Title */}
-                        <h2 className="text-lg  font-semibold text-black mb-3">
-                            Brend <span className="text-red-500 ">*</span>
-                        </h2>
+                                {/* Select */}
+                                <Select
+                                    value={countryDisabled ? null : country}
+                                    onChange={(value) => setCountry(value)}
+                                    placeholder="Mamlakatni tanlang"
+                                    style={{ width: 380, height: 45 }}
+                                    disabled={countryDisabled}
+                                >
+                                    <Option value="uz">O‘zbekiston</Option>
+                                    <Option value="ru">Rossiya</Option>
+                                    <Option value="us">AQSH</Option>
+                                </Select>
 
-
-                        {/* Card */}
-                        <div className="mt-4 flex  items-center  gap-3">
-                            <div className=" p-4 border border-gray-300 rounded-lg w-[300px] ">
-                                <h3 className="font-semibold text-[13px]">Brend nimaga muhim</h3>
-                                <p className="text-[12px] text-gray-600 mt-1">
-                                    Bu xaridorlarga tovarlarni tezroq va osonroq topishga yordam beradi
-
-
-                                </p>
-                            </div>
-                            <div className=" p-4 border border-gray-300 rounded-lg w-[300px] h-[95px]">
-                                <h3 className="font-semibold text-[13px]">Agar kerakli brend yo‘q bo‘lsa
-
-                                </h3>
-                                <p className="text-[12px] text-gray-600 mt-1">
-                                    “Brend yo‘q” belgisini qo‘ying
-
-
-                                </p>
-                            </div>
-                            <div className=" p-4 border border-gray-300 rounded-lg w-[300px]">
-                                <h3 className="font-semibold text-[13px]">Brenddni tasdiqlang
-
-                                </h3>
-                                <p className="text-[12px] text-gray-600 mt-1">
-                                    Ba’zi brendlarni tanlash uchun tasdiqlovchi hujjatlarni taqdim etish kerak Batafsil
-                                </p>
+                                {/* Checkbox */}
+                                <div className="mt-4">
+                                    <Checkbox
+                                        checked={countryDisabled}
+                                        onChange={(e) => {
+                                            setCountryDisabled(e.target.checked);
+                                            if (e.target.checked) setCountry(null); // bo'sh yuborish
+                                        }}
+                                    >                                        Mavjud emas ishlab chiqarilgan mamlakat
+                                    </Checkbox>
+                                </div>
                             </div>
 
-                        </div>
-
-                        {/* Link + Button */}
-                        <div className="mt-4 mb-4">
-                            <a
-                                href="#"
-                                className="text-sm text-[#7F4DFF] hover:underline inline-block"
-                            >
-                                Yoʻriqnomada batafsil
-                            </a>
-                        </div>
-
-                        {/* Select */}
-                        <Select
-                            placeholder="Mamlakatni tanlang"
-                            disabled={disabled}
-                            style={{
-                                width: 380, // uzunligi rasmga yaqinlashtirilgan
-                                height: 45,
-                            }}
-                        >
-                            <Option value="uz">O‘zbekiston</Option>
-                            <Option value="ru">Rossiya</Option>
-                            <Option value="us">AQSH</Option>
-                        </Select>
-
-                        {/* Checkbox */}
-                        <div className="mt-4">
-                            <Checkbox
-                                checked={disabled}
-                                onChange={(e) => setDisabled(e.target.checked)}
-                                style={{
-                                    fontSize: 14,
-                                    color: "black",
-                                }}
-                            >
-                                Mavjud emas ishlab chiqarilgan mamlakat
-                            </Checkbox>
-                        </div>
-                    </div>
-
-                    {/* Model */}
-                    <div className="bg-white rounded-lg p-6 mb-8">
-                        {/* Title */}
-                        <h2 className="text-lg  font-semibold text-black mb-3">
-                            Model
-                        </h2>
 
 
-                        {/* Card */}
-                        <div className="mt-4 flex  items-center  gap-3">
-                            <div className=" p-4 border border-gray-300 rounded-lg w-[300px] ">
-                                <h3 className="font-semibold text-[13px]">Model qanday ko‘rsatiladi</h3>
-                                <p className="text-[12px] text-gray-600 mt-1">
-                                    Modelning to‘liq va aniq — brendsiz faqat bitta modelning nomi kerak, aks holda moderatsiyadan o‘tmasligi mumkin
+                            {/* Brend */}
+                            <div className="bg-white rounded-lg p-6 mb-8">
+                                {/* Title */}
+                                <h2 className="text-lg  font-semibold text-black mb-3">
+                                    Brend <span className="text-red-500 ">*</span>
+                                </h2>
 
 
-                                </p>
-                            </div>
-                            <div className=" p-4 border border-gray-300 rounded-lg w-[300px] h-[111px]">
-                                <h3 className="font-semibold text-[13px]">Masalan, agar tovar Apple MacBook bo‘lsa
-
-                                </h3>
-                                <p className="text-[12px] text-gray-600 mt-1">
-                                    Unda model — Pro 13 256Gb Space Gray
+                                {/* Card */}
+                                <div className="mt-4 flex  items-center  gap-3">
+                                    <div className=" p-4 border border-gray-300 rounded-lg w-[300px] ">
+                                        <h3 className="font-semibold text-[13px]">Brend nimaga muhim</h3>
+                                        <p className="text-[12px] text-gray-600 mt-1">
+                                            Bu xaridorlarga tovarlarni tezroq va osonroq topishga yordam beradi
 
 
+                                        </p>
+                                    </div>
+                                    <div className=" p-4 border border-gray-300 rounded-lg w-[300px] h-[95px]">
+                                        <h3 className="font-semibold text-[13px]">Agar kerakli brend yo‘q bo‘lsa
 
-                                </p>
-                            </div>
-                            <div className=" p-4 border border-gray-300 rounded-lg w-[300px]">
-                                <h3 className="font-semibold text-[13px]">Muhim so‘zlarni yozmagan ma’qul
+                                        </h3>
+                                        <p className="text-[12px] text-gray-600 mt-1">
+                                            “Brend yo‘q” belgisini qo‘ying
 
 
-                                </h3>
-                                <p className="text-[12px] text-gray-600 mt-1">
-                                    Masalan: notebook, noutbuk, nout, kompyuter, компьютер, ноут, ноутбуки, noutbook, noutbuklar, для офиса
-                                </p>
+                                        </p>
+                                    </div>
+                                    <div className=" p-4 border border-gray-300 rounded-lg w-[300px]">
+                                        <h3 className="font-semibold text-[13px]">Brenddni tasdiqlang
+
+                                        </h3>
+                                        <p className="text-[12px] text-gray-600 mt-1">
+                                            Ba’zi brendlarni tanlash uchun tasdiqlovchi hujjatlarni taqdim etish kerak Batafsil
+                                        </p>
+                                    </div>
+
+                                </div>
+
+                                {/* Link + Button */}
+                                <div className="mt-4 mb-4">
+                                    <a
+                                        href="#"
+                                        className="text-sm text-[#7F4DFF] hover:underline inline-block"
+                                    >
+                                        Yoʻriqnomada batafsil
+                                    </a>
+                                </div>
+
+                                <Select
+                                    value={brandDisabled ? null : brand}
+                                    onChange={(v) => setBrand(v)}
+                                    placeholder="Brendni tanlang"
+                                    style={{ width: 380, height: 45 }}
+                                    disabled={brandDisabled}
+                                >
+                                    <Option value="apple">Apple</Option>
+                                    <Option value="samsung">Samsung</Option>
+                                    <Option value="huawei">Huawei</Option>
+                                </Select>
+
+                                {/* Checkbox */}
+                                <div className="mt-4">
+                                    <Checkbox
+                                        checked={brandDisabled}
+                                        onChange={(e) => {
+                                            setBrandDisabled(e.target.checked);
+                                            if (e.target.checked) setBrand(null);
+                                        }}
+                                    >Mavjud emas Ishlab chiqarilgan Brend</Checkbox>
+                                </div>
                             </div>
 
-                        </div>
 
-                        {/* Link + Button */}
-                        <div className="mt-4 mb-4">
-                            <a
-                                href="#"
-                                className="text-sm text-[#7F4DFF] hover:underline inline-block"
-                            >
-                                Yoʻriqnomada batafsil
-                            </a>
-                        </div>
-
-                        {/* Select */}
-                        <Select
-                            placeholder="Mamlakatni tanlang"
-                            disabled={disabled}
-                            style={{
-                                width: 380, // uzunligi rasmga yaqinlashtirilgan
-                                height: 45,
-                            }}
-                        >
-                            <Option value="uz">O‘zbekiston</Option>
-                            <Option value="ru">Rossiya</Option>
-                            <Option value="us">AQSH</Option>
-                        </Select>
-
-                        {/* Checkbox */}
-                        <div className="mt-4">
-                            <Checkbox
-                                checked={disabled}
-                                onChange={(e) => setDisabled(e.target.checked)}
-                                style={{
-                                    fontSize: 14,
-                                    color: "black",
-                                }}
-                            >
-                                Mavjud emas ishlab chiqarilgan mamlakat
-                            </Checkbox>
-                        </div>
-                    </div>
-
-                    {/* Kafolatoylarda */}
-                    <div className="bg-white rounded-lg p-6 mb-8">
-                        {/* Title */}
-                        <h2 className="text-lg  font-semibold text-black mb-3">
-                            Kafolat  <span className="text-gray-500 ">oylarda</span>
-                        </h2>
+                            {/* Model */}
+                            <div className="bg-white rounded-lg p-6 mb-8">
+                                {/* Title */}
+                                <h2 className="text-lg  font-semibold text-black mb-3">
+                                    Model
+                                </h2>
 
 
-                        {/* Card */}
-                        <div className="mt-4 flex  items-center  gap-3 mb-4">
-                            <div className=" p-4 border border-gray-300 rounded-lg w-[300px] ">
-                                <h3 className="font-semibold text-[13px]">Agar muddat ko‘rsatilmasa</h3>
-                                <p className="text-[12px] text-gray-600 mt-1">
-                                    Qonun bo‘yicha kafolat avtomatik ravishda 6 oy bo‘ladi
+                                {/* Card */}
+                                <div className="mt-4 flex  items-center  gap-3">
+                                    <div className=" p-4 border border-gray-300 rounded-lg w-[300px] ">
+                                        <h3 className="font-semibold text-[13px]">Model qanday ko‘rsatiladi</h3>
+                                        <p className="text-[12px] text-gray-600 mt-1">
+                                            Modelning to‘liq va aniq — brendsiz faqat bitta modelning nomi kerak, aks holda moderatsiyadan o‘tmasligi mumkin
 
-                                </p>
+
+                                        </p>
+                                    </div>
+                                    <div className=" p-4 border border-gray-300 rounded-lg w-[300px] h-[111px]">
+                                        <h3 className="font-semibold text-[13px]">Masalan, agar tovar Apple MacBook bo‘lsa
+
+                                        </h3>
+                                        <p className="text-[12px] text-gray-600 mt-1">
+                                            Unda model — Pro 13 256Gb Space Gray
+
+
+
+                                        </p>
+                                    </div>
+                                    <div className=" p-4 border border-gray-300 rounded-lg w-[300px]">
+                                        <h3 className="font-semibold text-[13px]">Muhim so‘zlarni yozmagan ma’qul
+
+
+                                        </h3>
+                                        <p className="text-[12px] text-gray-600 mt-1">
+                                            Masalan: notebook, noutbuk, nout, kompyuter, компьютер, ноут, ноутбуки, noutbook, noutbuklar, для офиса
+                                        </p>
+                                    </div>
+
+                                </div>
+
+                                {/* Link + Button */}
+                                <div className="mt-4 mb-4">
+                                    <a
+                                        href="#"
+                                        className="text-sm text-[#7F4DFF] hover:underline inline-block"
+                                    >
+                                        Yoʻriqnomada batafsil
+                                    </a>
+                                </div>
+
+                                <Select
+                                    value={modelDisabled ? null : model}
+                                    onChange={(v) => setModel(v)}
+                                    placeholder="Modelni tanlang"
+                                    style={{ width: 380, height: 45 }}
+                                    disabled={modelDisabled}
+                                >
+                                    <Option value="pro13">Pro 13 256Gb Space Gray</Option>
+                                    <Option value="air15">Air 15 512Gb Silver</Option>
+                                </Select>
+
+                                {/* Checkbox */}
+                                <div className="mt-4">
+                                    <Checkbox
+                                        checked={modelDisabled}
+                                        onChange={(e) => {
+                                            setModelDisabled(e.target.checked);
+                                            if (e.target.checked) setModel(null); // bo'sh yuborish
+                                        }}
+                                    >Mavjud emas Ishlab chiqarilgan model</Checkbox>
+                                </div>
                             </div>
+
+                            {/* Kafolatoylarda */}
+                            <div className="bg-white rounded-lg p-6 mb-8">
+                                {/* Title */}
+                                <h2 className="text-lg  font-semibold text-black mb-3">
+                                    Kafolat  <span className="text-gray-500 ">oylarda</span>
+                                </h2>
+
+
+                                {/* Card */}
+                                <div className="mt-4 flex  items-center  gap-3 mb-4">
+                                    <div className=" p-4 border border-gray-300 rounded-lg w-[300px] ">
+                                        <h3 className="font-semibold text-[13px]">Agar muddat ko‘rsatilmasa</h3>
+                                        <p className="text-[12px] text-gray-600 mt-1">
+                                            Qonun bo‘yicha kafolat avtomatik ravishda 6 oy bo‘ladi
+
+                                        </p>
+                                    </div>
+                                </div>
+
+
+                                <Select
+                                    value={guarantee} // <-- qo'shildi
+                                    onChange={(value) => setGuarantee(value)} // <-- qo'shildi
+                                    placeholder="Masalan, 24 yoki 12"
+                                    style={{ width: 380, height: 45 }}
+                                >
+                                    <Option value="12">12 oy</Option>
+                                    <Option value="24">24 oy</Option>
+                                </Select>
+
+                            </div>
+
+
                         </div>
+                    )}
 
-
-
-                        {/* Select */}
-                        <Select
-                            placeholder="Masalan, 24 yoki 12"
-                            disabled={disabled}
-                            style={{
-                                width: 380, // uzunligi rasmga yaqinlashtirilgan
-                                height: 45,
-                            }}
-                        >
-                            <Option value="uz">O‘zbekiston</Option>
-                            <Option value="ru">Rossiya</Option>
-                            <Option value="us">AQSH</Option>
-                        </Select>
-
-                    </div>
 
                     {/* Qisqacha tavsif */}
                     <div className="bg-white rounded-lg p-6 mb-8">
@@ -581,6 +627,13 @@ export default function StepOn() {
                             />
                         </div>
                     </div>
+                    {categorySelected && (
+                        <ProductImages
+                            images={images}
+                            setImages={setImages}
+                        />
+                    )}
+
 
                     {/* Video Section */}
                     <div className="mb-8 bg-white rounded-lg p-6">
@@ -632,356 +685,30 @@ export default function StepOn() {
                         </div>
                     </div>
 
-                    {/* 360 rasm Section */}
-                    <div className='mb-8 bg-white rounded-lg p-6'>
-                        <h2 className="text-xl font-semibold mb-4 text-black">360 rasm</h2>
-
-                        <div className="gap-6">
-                            {/* Left side - Format and Size cards */}
-                            <div className="flex gap-4 mb-4 w-[600px]">
-                                {/* Format Card */}
-                                <div className="bg-white rounded-lg w-[250px] p-4 border border-gray-200">
-                                    <h3 className="font-medium mb-3 text-gray-800">Format</h3>
-                                    <p className="text-sm text-gray-600">Arxiv .P3D, .ZIP</p>
-                                </div>
-
-                                {/* File size Card */}
-                                <div className="bg-white rounded-lg p-4 w-[250px] border border-gray-200">
-                                    <h3 className="font-medium mb-2 text-gray-800">Faylning hajmi</h3>
-                                    <p className="text-sm text-gray-600">10 Mb dan katta emas</p>
-                                </div>
-                            </div>
-
-                            {/* Right side - Upload Area */}
-                            <div className="mt-10 w-[140px] md:mt-0">
-                                <div className="bg-white rounded-lg border-2 border-dashed border-gray-200 h-full">
-                                    <label className="cursor-pointer block h-full">
-                                        <input
-                                            type="file"
-                                            accept=".p3d,.zip,.P3D,.ZIP"
-                                            onChange={handleImageUpload}
-                                            className="hidden"
-                                        />
-                                        <div className="flex flex-col items-center justify-center h-full py-8 px-6">
-                                            <Plus className="w-6 h-6 text-gray-400 mb-2" />
-                                            <p className="text-sm text-gray-600 font-medium text-center">360 rasm qo'shish</p>
-                                            {imageFile && (
-                                                <p className="text-xs text-green-600 mt-2 text-center">
-                                                    {imageFile.name}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
 
-                    {/* Xususiyatlarni tanlash */}
-                    <div className="mb-8 bg-white rounded-lg p-6">
-                        <h2 className="text-[20px] font-medium mb-4 text-gray-900">
-                            Xususiyatlarni tanlash
-                            <span className="text-gray-500 font-normal text-lg ml-2">(Majburiy emas, maksimal 5 ta)</span>
-                        </h2>
 
-                        {/* Three cards in a row */}
-                        <div className="grid grid-cols-3 gap-6 mb-6">
-                            {/* Card 1 */}
-                            <div className="bg-white border border-gray-200 rounded-lg p-5">
-                                <h3 className="font-semibold text-gray-900 mb-3 text-md">
-                                    Tovarlar qanday guruhlanadi
-                                </h3>
-                                <p className="text-gray-600 text-sm leading-relaxed">
-                                    Masalan, O'lcham tavsifli futbolka — XS, S, M, L, XL, 2XL
-                                </p>
-                            </div>
+                    <Product360Upload imageFile={imageFile} handleImageUpload={handleImageUpload} />
+                    <FeatureSelection
+                        selectedFeature={selectedFeature}
+                        setSelectedFeature={setSelectedFeature}
+                    />
+                    <ProductFeatures
+                        selectedFeature={selectedFeature}
+                        setSelectedFeature={setSelectedFeature}
+                        uzbekFeedback={uzbekFeedback}
+                        setUzbekFeedback={setUzbekFeedback}
+                        russianFeedback={russianFeedback}
+                        setRussianFeedback={setRussianFeedback}
+                    />
 
-                            {/* Card 2 */}
-                            <div className="bg-white border border-gray-200 rounded-lg p-5">
-                                <h3 className="font-semibold text-gray-900 mb-3 text-md">
-                                    Har xil turdagi tovarlar bo'lsa
-                                </h3>
-                                <p className="text-gray-600 text-sm leading-relaxed">
-                                    Masalan, telefon uchun g'ilof va telefonni guruhlash mumkin emas
-                                </p>
-                            </div>
-
-                            {/* Card 3 */}
-                            <div className="bg-white border border-gray-200 rounded-lg p-5">
-                                <h3 className="font-semibold text-gray-900 mb-3 text-md">
-                                    Kerakli tavsif mavjud bo'lmasa
-                                </h3>
-                                <p className="text-gray-600 text-sm leading-relaxed">
-                                    O'zining noyob tavsifini yaratish mumkin
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Link */}
-                        <div className="mb-6">
-                            <a href="#" className="text-[#7F4DFF] hover:text-[#7843fd] text-sm font-medium">
-                                Yo'riqnomada batafsil
-                            </a>
-                        </div>
-
-                        {/* Dropdown */}
-                        <div className="mb-6">
-                            <div className="relative">
-                                <select
-                                    className="w-full md:w-80 p-4 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 appearance-none cursor-pointer text-base"
-                                    value={selectedFeature}
-                                    onChange={(e) => setSelectedFeature(e.target.value)}
-                                >
-                                    <option option value="">Xususiyat qo'shish</option>
-                                    <option value="size">O'lcham</option>
-                                    <option value="color">Rang</option>
-                                    <option value="material">Material</option>
-                                </select>
-                                <ChevronDown className="absolute left-72 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
-                            </div>
-                        </div>
-
-                        {/* Yellow info box
-                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                            <p className="text-gray-800 text-sm">
-                                Tavsifni faqat toifa tanlangdan keyin qo'shish mumkin.{' '}
-                                <a href="#" className="text-blue-600 hover:text-blue-700 underline font-medium">
-                                    Tovarning toifasini tanlash
-                                </a>
-                            </p>
-                        </div> */}
-                    </div>
+                    <ProductDetails />
+                    <ProductCertificates />
 
 
-                    {/* Tovar xususiyatlari */}
-                    <div className="mb-8 bg-white rounded-lg p-6">
-                        <h2 className="text-[20px] font-medium mb-4 text-gray-900">Tovar xususiyatlari</h2>
-
-                        {/* Three info cards */}
-                        <div className="grid grid-cols-3 gap-8 mb-6">
-                            <div>
-                                <h3 className="font-semibold text-gray-900 mb-3 text-md">
-                                    Xususiyatlar nimaga muhim
-                                </h3>
-                                <p className="text-gray-600 text-sm leading-relaxed">
-                                    Bu xaridorlarga yordam beradi, sotuvlarni oshiradi va qaytarishlarning sonini kamaytiradi
-                                </p>
-                            </div>
-
-                            <div>
-                                <h3 className="font-semibold text-gray-900 mb-3 text-md">
-                                    Xususiyatlarning misolari
-                                </h3>
-                                <p className="text-gray-600 text-sm leading-relaxed">
-                                    Material, ishlab chiqaruvchi mamlakat, o'lchamlar, yosh chekolari, quvvati, tarkib, kafolat
-                                </p>
-                            </div>
-
-                            <div>
-                                <h3 className="font-semibold text-gray-900 mb-3 text-md">
-                                    Qancha batafsil bo'lsa, shuncha yaxshi
-                                </h3>
-                                <p className="text-gray-600 text-sm leading-relaxed">
-                                    Bu kartochkaning Google va Yandexda chiqarilishini yaxshilaydi
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Link */}
-                        <div className="mb-8">
-                            <a href="#" className="text-[#7F4DFF] hover:text-[#7843fd] text-sm font-medium">
-                                Yo'riqnomada batafsil
-                            </a>
-                        </div>
-
-                        {/* Text areas */}
-                        <div className="grid grid-cols-2 gap-6">
-                            <div className="relative">
-                                <textarea
-                                    className="w-full h-11 outline-none p-2 border border-gray-300 rounded-lg resize-none placeholder-gray-400 text-base"
-                                    placeholder="O'zbek tilida asosiy xususiyat"
-                                    value={uzbekFeedback}
-                                    onChange={(e) => setUzbekFeedback(e.target.value)}
-                                    maxLength={255}
-                                />
-                                <div className="absolute bottom-3 right-4 text-sm text-gray-400">
-                                    {uzbekFeedback.length}/255
-                                </div>
-                            </div>
-
-                            <div className="relative">
-                                <textarea
-                                    className="w-full h-11 p-2 outline-none border border-gray-300 rounded-lg resize-none placeholder-gray-400 text-base"
-                                    placeholder="Rus tilida asosiy xususiyat"
-                                    value={russianFeedback}
-                                    onChange={(e) => setRussianFeedback(e.target.value)}
-                                    maxLength={255}
-                                />
-                                <div className="absolute bottom-3 right-4 text-sm text-gray-400">
-                                    {russianFeedback.length}/255
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-
-                    {/* Oʻlchamli setka */}
-                    <div className="mb-8 bg-white rounded-lg p-6">
-                        <h2 className="text-lg font-semibold">Oʻlchamli setka</h2>
-
-                        {/* Card */}
-                        <div className="mt-4 flex  items-center justify-between gap-3">
-                            <div className=" p-4 border border-gray-300 rounded-lg w-[400px] ">
-                                <h3 className="font-semibold text-[13px]">Oʻlchamlar nimaga muhim</h3>
-                                <p className="text-[12px] text-gray-600 mt-1">
-                                    Bu xaridorga toʻg‘ri keladigan oʻlchamni tanlashga yordam beradi va
-                                    qaytarishlarning sonini kamaytiradi
-                                </p>
-                            </div>
-                            <div className=" p-4 border border-gray-300 rounded-lg w-[400px]">
-                                <h3 className="font-semibold text-[13px]">Ayniqsa kiyimlarda</h3>
-                                <p className="text-[12px] text-gray-600 mt-1">
-                                    Suhbatlarga koʻra taxminan 60% xaridorlar Kiyim va Poyabzallar
-                                    toifalarida oʻlchamlarni koʻrishadi
-                                </p>
-                            </div>
-                            <div className=" p-4 border border-gray-300 rounded-lg w-[400px]">
-                                <h3 className="font-semibold text-[13px]">Imkon qadar batafsil</h3>
-                                <p className="text-[12px] text-gray-600 mt-1">
-                                    Masalan, kiyim uchun santimetrlarni koʻrsating: S oʻlchami (bel
-                                    aylanasi 80–90 sm, sonlar aylanasi 90–98 sm)
-                                </p>
-                            </div>
-                            <div className=" p-4 border border-gray-300 rounded-lg w-[400px] h-[112px]">
-                                <h3 className="font-semibold text-[13px]">Yana nima koʻrsatish mumkin</h3>
-                                <p className="text-[12px] text-gray-600 mt-1">
-                                    Maydon tovarning katta-kichikligi va vazni uchun mos keladi
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Link + Button */}
-                        <div className="mt-4">
-                            <a
-                                href="#"
-                                className="text-sm text-[#7F4DFF] hover:underline inline-block"
-                            >
-                                Yoʻriqnomada batafsil
-                            </a>
-                            <div className="mt-3">
-                                <button className="px-5 py-2 rounded-xl bg-indigo-100 text-[#7F4DFF] font-medium">
-                                    Qoʻshish
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Tarkib */}
-                    <div className="mb-8 bg-white rounded-lg p-6">
-                        <h2 className="text-lg font-semibold">Tarkib</h2>
-
-                        <div className="mt-4">
-                            <a
-                                href="#"
-                                className="text-sm text-[#7F4DFF] hover:underline inline-block"
-                            >
-                                Yoʻriqnomada batafsil
-                            </a>
-                            <div className="mt-3">
-                                <button className="px-5 py-2 rounded-xl bg-indigo-100 text-[#7F4DFF] font-medium">
-                                    Qoʻshish
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Foydalanish boʻyicha yoʻriqnoma */}
-                    <div className="mb-8 bg-white rounded-lg p-6">
-                        <h2 className="text-lg font-semibold">Foydalanish boʻyicha yoʻriqnoma</h2>
-
-                        {/* Card */}
-                        <div className="mt-4 flex  items-center gap-3">
-                            <div className=" p-4 border border-gray-300 rounded-lg w-[300px] ">
-                                <h3 className="font-semibold text-[13px]">Tovardan qanday foydalanishni aytib bering</h3>
-                                <p className="text-[12px] text-gray-600 mt-1">
-                                    Bu texnik tomondan murakkab tovarlarni sotishda yordam beradi
-                                </p>
-                            </div>
-                            <div className=" p-4 border border-gray-300 rounded-lg w-[300px]">
-                                <h3 className="font-semibold text-[13px]">Mijozlarga mahsulotni tushunishga yordam bering</h3>
-                                <p className="text-[12px] text-gray-600 mt-1">
-                                    Maslahat, yo‘l-yo‘riqlar xizmat muddatini uzaytiradi va buzilishning oldini oladi
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Link + Button */}
-                        <div className="mt-4">
-                            <a
-                                href="#"
-                                className="text-sm text-[#7F4DFF] hover:underline inline-block"
-                            >
-                                Yoʻriqnomada batafsil
-                            </a>
-                            <div className="mt-3">
-                                <button className="px-5 py-2 rounded-xl bg-indigo-100 text-[#7F4DFF] font-medium">
-                                    Qoʻshish
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Sertifikatlar */}
-                    <div className="mb-8 bg-white rounded-lg p-6">
-                        <h2 className="text-lg font-semibold">Sertifikatlar</h2>
-
-                        {/* Card */}
-                        <div className="mt-4 flex  items-center gap-3">
-                            <div className=" p-4 border border-gray-300 rounded-lg w-[300px] ">
-                                <h3 className="font-semibold text-[13px]">Qayerdan olinadi</h3>
-                                <p className="text-[12px] text-gray-600 mt-1">
-                                    Davlat akkreditatsiya markazi (DAM) beradi
-                                </p>
-                            </div>
-                            <div className=" p-4 border border-gray-300 rounded-lg w-[300px]">
-                                <h3 className="font-semibold text-[13px]">Format</h3>
-
-                                <ul className="space-y-2 text-sm text-gray-600">
-                                    <li>•  JPEG, JPG, PNG</li>
-                                    <li>•   5 Mb dan katta emas</li>
-                                </ul>
-                            </div>
-                            <div className=" p-4 border border-gray-300 rounded-lg w-[300px]">
-                                <h3 className="font-semibold text-[13px]">Agar faqat PDF formatda bo‘lsa</h3>
-                                <p className="text-[12px] text-gray-600 mt-1">
-                                    Har bir sahifani skrinshot qilib rasmini qo‘shing
-
-
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Link + Button */}
-                        <div className="mt-4">
-                            <a
-                                href="#"
-                                className="text-sm text-[#7F4DFF] hover:underline inline-block"
-                            >
-                                Yoʻriqnomada batafsil
-                            </a>
-                            <div className="mt-3">
-                                <button className="px-5 py-2 rounded-xl bg-indigo-100 text-[#7F4DFF] font-medium">
-                                    Qoʻshish
-                                </button>
-                            </div>
-                        </div>
-                    </div>
 
                 </div>
             </div>
         </div>
     );
 }
-
-

@@ -1,151 +1,143 @@
 "use client"
-import React, { useState } from 'react';
-import { Search, MoreHorizontal, Grid, List, RefreshCw, Plus, Rocket, Info } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, MoreHorizontal, Grid, List, RefreshCw, Plus, Rocket } from 'lucide-react';
 import Link from 'next/link';
+import { Select } from 'antd'; // ✅ Antd Select
 
 const ProductManagement = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [viewMode, setViewMode] = useState('grid');
+  const [products, setProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortOption, setSortOption] = useState("id");
+
+  // 🔹 API'dan ma'lumotlarni olish
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch("https://1b91559cc9edc1c6.mokky.dev/card");
+        const data = await res.json();
+
+        // API ma'lumotlarini frontend formatiga o'tkazish
+        const formattedData = data.map((item) => {
+          const status = determineStatus();
+          return {
+            id: item.id,
+            title: item.nameUz || "Nomi mavjud emas",
+            image: extractImageFromDescription(item.uzbekDescription1) || "https://via.placeholder.com/204x271?text=Rasm+mavjud+emas",
+            status: status,
+            statusColor: getStatusColor(status),
+            rating: "0.00",
+            views: item.uzbekFeedback || "0",
+            conversion: "0%",
+            sold: "0",
+            returned: "0",
+            damaged: "0",
+            category: item.categorySelected ? "Kategoriya mavjud" : "Kategoriya mavjud emas",
+            productId: item.id,
+            sku: `SKU${item.id.toString().padStart(6, '0')}`,
+            price: "Narxi mavjud emas",
+            moderation: item.categorySelected ? "Tekshirildi" : "Incomplete",
+            brand: item.brand || "Brend mavjud emas",
+            country: item.country || "Mamlakat mavjud emas",
+            guarantee: item.guarantee || "Kafolat mavjud emas"
+          };
+        });
+
+        setProducts(formattedData);
+        setFilteredProducts(formattedData);
+      } catch (error) {
+        console.error("Xatolik yuz berdi:", error);
+      }
+    };
+    fetchProducts();
+  }, []);
+
+  // Yordamchi funksiyalar
+  const extractImageFromDescription = (description) => {
+    if (!description) return null;
+    const imgMatch = description.match(/<img[^>]+src="([^"]+)"/);
+    return imgMatch ? imgMatch[1] : null;
+  };
+
+  const determineStatus = () => {
+    const statuses = ["Sotuvda", "Tugagan", "Sotuvda emas"];
+    return statuses[Math.floor(Math.random() * statuses.length)];
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "Sotuvda": return "bg-green-100 text-green-800";
+      case "Tugagan": return "bg-red-100 text-red-800";
+      case "Sotuvda emas": return "bg-gray-100 text-gray-800";
+      case "Bloklangan": return "bg-red-100 text-red-800";
+      case "Arxiv": return "bg-yellow-100 text-yellow-800";
+      default: return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  // 🔹 Tabs countlarni hisoblash
+  const tabCounts = {
+    all: products.length,
+    active: products.filter(p => p.status === "Sotuvda").length,
+    ending: products.filter(p => p.status === "Tugagan").length,
+    inactive: products.filter(p => p.status === "Sotuvda emas").length,
+    blocked: products.filter(p => p.status === "Bloklangan").length,
+    archived: products.filter(p => p.status === "Arxiv").length,
+    incomplete: products.filter(p => p.moderation === "Incomplete").length,
+  };
 
   const tabs = [
-    { key: 'all', label: 'Barcha tovarlar', count: 6, active: true },
-    { key: 'active', label: 'Sotuvdagi', count: 3, active: false },
-    { key: 'ending', label: 'Tugayapti', count: 0, active: false },
-    { key: 'inactive', label: 'Sotuvda bo\'lmaganlar', count: 3, active: false },
-    { key: 'blocked', label: 'Bloklanganlar', count: 0, active: false },
-    { key: 'archived', label: 'Arxivdagilar', count: 0, active: false },
-    { key: 'incomplete', label: 'Xususiyatlar to\'ldirilmagan', count: 0, active: false },
+    { key: 'all', label: 'Barcha tovarlar', count: tabCounts.all },
+    { key: 'active', label: 'Sotuvdagi', count: tabCounts.active },
+    { key: 'ending', label: 'Tugayapti', count: tabCounts.ending },
+    { key: 'inactive', label: 'Sotuvda bo\'lmaganlar', count: tabCounts.inactive },
+    { key: 'blocked', label: 'Bloklanganlar', count: tabCounts.blocked },
+    { key: 'archived', label: 'Arxivdagilar', count: tabCounts.archived },
+    { key: 'incomplete', label: 'Xususiyatlar to\'ldirilmagan', count: tabCounts.incomplete },
   ];
 
-  const products = [
-    {
-      id: 1,
-      title: 'Daftar chiziqli, 36 varaq, 5 dona',
-      price: '100 000 so\'m',
-      status: 'Sotuvda',
-      statusColor: 'bg-green-100 text-green-600',
-      image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=200&h=140&fit=crop',
-      rating: 0.00,
-      views: 75,
-      conversion: '2.67%',
-      sold: 3,
-      returned: 0,
-      damaged: 0,
-      category: 'Ma\'lumotlar yo\'q',
-      moderation: 'Tasdiqlangan',
-      sku: 'ONATILI',
-      productId: '1890410',
-      fboCount: 1,
-      fbsCount: 0,
-      canPromote: true,
-    },
-    {
-      id: 2,
-      title: 'Rangli uchburchak qalamlar to\'plami 24 ta rang',
-      price: '110 000 so\'m',
-      status: 'Sotuvda',
-      statusColor: 'bg-green-100 text-green-600',
-      image: 'https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=200&h=140&fit=crop',
-      rating: 0.00,
-      views: 23,
-      conversion: '4.35%',
-      sold: 1,
-      returned: 0,
-      damaged: 0,
-      category: 'Ma\'lumotlar yo\'q',
-      moderation: 'Tasdiqlangan',
-      sku: 'QALAM',
-      productId: '1888631',
-      fboCount: 3,
-      fbsCount: 0,
-      canPromote: true,
-    },
-    {
-      id: 3,
-      title: 'Maktab uchun to\'plam "Aqilli Start"',
-      price: '90 so\'m',
-      status: 'Tugadi',
-      statusColor: 'bg-gray-100 text-gray-600',
-      image: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=200&h=140&fit=crop',
-      rating: 0.00,
-      views: 8,
-      conversion: '12.5%',
-      sold: 5,
-      returned: 0,
-      damaged: 0,
-      category: 'A',
-      moderation: 'Tasdiqlangan',
-      sku: 'SET',
-      productId: '1888529',
-      fboCount: 0,
-      fbsCount: 0,
-      canPromote: false,
-    },
-    {
-      id: 4,
-      title: 'Penal',
-      price: '85 000 so\'m',
-      status: 'Tugadi',
-      statusColor: 'bg-gray-100 text-gray-600',
-      image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=200&h=140&fit=crop',
-      rating: 0.00,
-      views: 79,
-      conversion: '1.27%',
-      sold: 1,
-      returned: 0,
-      damaged: 0,
-      category: 'Ma\'lumotlar yo\'q',
-      moderation: 'Tasdiqlangan',
-      sku: 'PENAL',
-      productId: '1887234',
-      fboCount: 0,
-      fbsCount: 0,
-      canPromote: false,
-    },
-    {
-      id: 5,
-      title: 'Kitoblar to\'plami',
-      price: '120 000 so\'m',
-      status: 'Tugadi',
-      statusColor: 'bg-gray-100 text-gray-600',
-      image: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=200&h=140&fit=crop',
-      rating: 0.00,
-      views: 54,
-      conversion: '1.85%',
-      sold: 1,
-      returned: 0,
-      damaged: 0,
-      category: 'Ma\'lumotlar yo\'q',
-      moderation: 'Tasdiqlangan',
-      sku: 'BOOKS',
-      productId: '1886123',
-      fboCount: 0,
-      fbsCount: 0,
-      canPromote: false,
-    },
-    {
-      id: 6,
-      title: 'Office mahsulotlari to\'plami',
-      price: '75 000 so\'m',
-      status: 'Sotuvda',
-      statusColor: 'bg-green-100 text-green-600',
-      image: 'https://images.unsplash.com/photo-1586281380117-5a60ae2050cc?w=200&h=140&fit=crop',
-      rating: 0.00,
-      views: 136,
-      conversion: '2.21%',
-      sold: 3,
-      returned: 0,
-      damaged: 0,
-      category: 'Ma\'lumotlar yo\'q',
-      moderation: 'Tasdiqlangan',
-      sku: 'OFFICE',
-      productId: '1885987',
-      fboCount: 0,
-      fbsCount: 0,
-      canPromote: true,
-    },
-  ];
+  // 🔹 Search + Sort + Tab filter
+  useEffect(() => {
+    let result = [...products];
 
+    // Tab filter
+    if (activeTab === "active") {
+      result = result.filter(p => p.status === "Sotuvda");
+    } else if (activeTab === "ending") {
+      result = result.filter(p => p.status === "Tugagan");
+    } else if (activeTab === "inactive") {
+      result = result.filter(p => p.status === "Sotuvda emas");
+    } else if (activeTab === "blocked") {
+      result = result.filter(p => p.status === "Bloklangan");
+    } else if (activeTab === "archived") {
+      result = result.filter(p => p.status === "Arxiv");
+    } else if (activeTab === "incomplete") {
+      result = result.filter(p => p.moderation === "Incomplete");
+    }
+
+    // Search filter
+    if (searchTerm) {
+      result = result.filter((p) =>
+        p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.sku.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Sort
+    if (sortOption === "id") {
+      result.sort((a, b) => a.id - b.id);
+    } else if (sortOption === "title") {
+      result.sort((a, b) => a.title.localeCompare(b.title));
+    } else if (sortOption === "price") {
+      result.sort((a, b) => a.id - b.id); // ID bo'yicha sort qilish, chunki narx yo'q
+    } else if (sortOption === "views") {
+      result.sort((a, b) => parseInt(b.views) - parseInt(a.views));
+    }
+
+    setFilteredProducts(result);
+  }, [searchTerm, sortOption, products, activeTab]);
 
   const ProductCard = ({ product }) => (
     <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
@@ -157,6 +149,9 @@ const ProductManagement = () => {
             src={product.image}
             alt={product.title}
             className="w-full h-full object-cover rounded-lg"
+            onError={(e) => {
+              e.target.src = "https://via.placeholder.com/204x271?text=Rasm+mavjud+emas";
+            }}
           />
           <span className={`absolute top-2 left-2 text-xs font-medium px-2 py-1 rounded ${product.statusColor}`}>
             {product.status}
@@ -170,21 +165,15 @@ const ProductManagement = () => {
         <div className="flex-1 space-y-1 text-xs">
           <div className="flex justify-between">
             <span className="text-gray-600">Reyting</span>
-            <span className="font-medium">{product.rating.toFixed(2)}</span>
+            <span className="font-medium">{product.rating}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-gray-600">Ko'rishlar</span>
-            <div className="flex items-center gap-1">
-              <span className="w-3 h-3 bg-gray-300 rounded-full flex items-center justify-center text-white" style={{ fontSize: '8px' }}>i</span>
-              <span className="font-medium">{product.views}</span>
-            </div>
+            <span className="font-medium">{product.views}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-gray-600">Konversiya</span>
-            <div className="flex items-center gap-1">
-              <span className="w-3 h-3 bg-gray-300 rounded-full flex items-center justify-center text-white" style={{ fontSize: '8px' }}>i</span>
-              <span className="font-medium">{product.conversion}</span>
-            </div>
+            <span className="font-medium">{product.conversion}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-600">Sotilgan</span>
@@ -200,10 +189,7 @@ const ProductManagement = () => {
           </div>
           <div className="flex justify-between items-center">
             <span className="text-gray-600">Toifa</span>
-            <div className="flex items-center gap-1">
-              <span className="w-3 h-3 bg-gray-300 rounded-full flex items-center justify-center text-white" style={{ fontSize: '8px' }}>i</span>
-              <span className="font-medium">{product.category}</span>
-            </div>
+            <span className="font-medium text-xs">{product.category}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-600">Saqlash</span>
@@ -212,25 +198,34 @@ const ProductManagement = () => {
         </div>
       </div>
 
-      {/* FBO/FBS Gray Section */}
-      <div className="flex items-center justify-between text-xs bg-gray-50 rounded-md px-3 py-2 mb-3">
-        <div className="flex items-center gap-2">
-          <span>FBO</span>
-          <span className="text-gray-500">Jo'natish uchun</span>
-          <div className="flex items-center gap-1">
-            <span className="w-4 h-4 bg-gray-600 rounded-full flex items-center justify-center text-white text-xs">
-              {product.fboCount}
+      {/* FBO/FBS Section - Rasmda ko'rsatilgandek */}
+      <div className="flex gap-4 mb-3 text-xs">
+        <div className="flex-1">
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-gray-600 flex items-center gap-1">
+              FBO
+              <span className="w-3 h-3 bg-gray-300 rounded-full flex items-center justify-center">
+                <span className="text-[8px] text-gray-600">?</span>
+              </span>
             </span>
-            <span className="font-medium">{product.fboStock}</span>
+            <span className="font-medium">0</span>
           </div>
+          <div className="text-gray-500 text-[10px]">Jo'natish uchun</div>
+          <div className="font-medium">0</div>
         </div>
-        <div className="flex items-center gap-2">
-          <span>FBS</span>
-          <div className="flex items-center gap-1">
-            <span className="w-4 h-4 bg-gray-400 rounded-full flex items-center justify-center text-white text-xs">
-              {product.fbsCount}
+
+        <div className="flex-1">
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-gray-600 flex items-center gap-1">
+              FBS
+              <span className="w-3 h-3 bg-gray-300 rounded-full flex items-center justify-center">
+                <span className="text-[8px] text-gray-600">?</span>
+              </span>
             </span>
+            <span className="font-medium">0</span>
           </div>
+          <div className="text-gray-500 text-[10px]">Jo'natish uchun</div>
+          <div className="font-medium">0</div>
         </div>
       </div>
 
@@ -242,7 +237,9 @@ const ProductManagement = () => {
       {/* Moderation and IDs */}
       <div className="text-xs text-gray-600 mb-3">
         <div className="mb-1">
-          Moderatsiya: <span className="text-green-600 font-medium">{product.moderation}</span>
+          Moderatsiya: <span className={`font-medium ${product.moderation === 'Tekshirildi' ? 'text-green-600' : 'text-orange-600'}`}>
+            {product.moderation}
+          </span>
         </div>
         <div>
           ID: <span className="font-medium">{product.productId}</span> | SKU: <span className="font-medium">{product.sku}</span>
@@ -253,7 +250,7 @@ const ProductManagement = () => {
       <div className="flex justify-between items-end">
         <div>
           <div className="text-xs text-gray-500 mb-1">boshlab</div>
-          <div className="text-lg font-semibold text-gray-900">{product.price} so'm</div>
+          <div className="text-lg font-semibold text-gray-900">{product.price}</div>
         </div>
         <button className="px-3 py-2 bg-purple-100 hover:bg-purple-200 text-purple-600 text-xs font-medium rounded-md transition-colors flex items-center gap-1">
           <span>Tovarni targ'ibot qilish</span>
@@ -263,9 +260,8 @@ const ProductManagement = () => {
     </div>
   );
 
-
   return (
-    <div className="h-[90vh] bg-[#e6e8ed] flex flex-col">
+    <div className="h-[93.70vh] bg-[#e6e8ed] flex flex-col">
       {/* Header */}
       <div className="bg-[#ffffff] px-6 py-4">
         <div className="flex justify-between items-center">
@@ -290,14 +286,14 @@ const ProductManagement = () => {
         <div className="bg-[#e6e8ed] px-6">
           {/* Tabs */}
           <div className="flex items-center gap-1 mb-4 mt-4 overflow-x-auto">
-            {tabs.map((tab, index) => (
+            {tabs.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors ${index === 0 ? 'bg-gray-900 text-white' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors ${activeTab === tab.key ? 'bg-gray-900 text-white' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                   }`}
               >
-                {tab.label} {tab.count > 0 && <span className="ml-1">{tab.count}</span>}
+                {tab.label} {tab.count > 0 && <span className="ml-1">({tab.count})</span>}
               </button>
             ))}
           </div>
@@ -310,19 +306,25 @@ const ProductManagement = () => {
                 <input
                   type="text"
                   placeholder="Ism, SKU yoki shtrix-kod bo'yicha izlash"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 pr-4 py-2 w-80 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm bg-white"
                 />
               </div>
             </div>
 
             <div className="flex items-center gap-3">
-              <select className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white">
-                <option>Karta raqami bo'yicha</option>
-                <option>Nom bo'yicha</option>
-                <option>Narx bo'yicha</option>
-                <option>Ko'rishlar bo'yicha</option>
-              </select>
-
+              <Select
+                value={sortOption}
+                onChange={setSortOption}
+                style={{ width: 200 }}
+                options={[
+                  { value: 'id', label: 'Karta raqami bo\'yicha' },
+                  { value: 'title', label: 'Nom bo\'yicha' },
+                  { value: 'price', label: 'Narx bo\'yicha' },
+                  { value: 'views', label: 'Ko\'rishlar bo\'yicha' },
+                ]}
+              />
               <div className="flex border border-gray-300 rounded-lg overflow-hidden bg-white">
                 <button
                   onClick={() => setViewMode('list')}
@@ -340,9 +342,9 @@ const ProductManagement = () => {
             </div>
           </div>
 
-          {/* Products: 3 in row */}
+          {/* Products */}
           <div className={`pb-6 ${viewMode === 'grid' ? 'grid grid-cols-3 gap-6' : 'space-y-4'}`}>
-            {products.map((product) => (
+            {filteredProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
