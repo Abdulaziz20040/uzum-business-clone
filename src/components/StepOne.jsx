@@ -44,10 +44,9 @@ export default function StepOn({ formData, setFormData }) {
 
     const [images, setImages] = useState([]);
     const [createdProductId, setCreatedProductId] = useState(null);
-
     useEffect(() => {
-        setFormData({
-            ...formData,
+        setFormData(prev => ({
+            ...prev,
             nameUz,
             nameRu,
             uzbekDescription,
@@ -65,19 +64,56 @@ export default function StepOn({ formData, setFormData }) {
             model,
             guarantee,
             categorySelected,
-        });
+            images: [...selectedFiles],
+        }));
     }, [
-        nameUz, nameRu, uzbekDescription, russianDescription,
-        uzbekDescription1, russianDescription1,
-        selectedFiles, videoFile, imageFile,
-        selectedFeature, uzbekFeedback, russianFeedback,
-        country, brand, model, guarantee, categorySelected,
+        nameUz,
+        nameRu,
+        uzbekDescription,
+        russianDescription,
+        uzbekDescription1,
+        russianDescription1,
+        selectedFiles,
+        videoFile,
+        imageFile,
+        selectedFeature,
+        uzbekFeedback,
+        russianFeedback,
+        country,
+        brand,
+        model,
+        guarantee,
+        categorySelected
     ]);
+
+
+    const [categoryPath, setCategoryPath] = useState([]); // breadcrumb labels
+    const [categoryValues, setCategoryValues] = useState([]); // select uchun tanlangan qiymatlar
+
+
+    const handleCategorySubmit = (data) => {
+        if (data) {
+            setCategorySelected(true);
+            setCategoryPath(data.labels);   // breadcrumb uchun
+            setCategoryValues(data.keys);   // selectlarni tanlangan holda saqlash
+        } else {
+            setCategorySelected(false);
+            // ❌ bu yerda categoryValues ni tozalash shart emas!
+            // chunki qayta ochilganda selectlar shu qiymatlar bilan chiqishi kerak
+        }
+    };
+
 
 
     const handleVideoUpload = (event) => {
         const file = event.target.files[0];
-        if (file) setVideoFile(file); // va formData useEffect orqali yangilanadi
+        if (file) {
+            if (file.size > 3 * 1024 * 1024) {
+                message.error("Video hajmi 3 MB dan oshmasligi kerak!");
+                return;
+            }
+            setVideoFile(file);
+        }
     };
 
     const handleImageUpload = (event) => {
@@ -85,29 +121,10 @@ export default function StepOn({ formData, setFormData }) {
         if (file) setImageFile(file); // va formData useEffect orqali yangilanadi
     };
 
-    const handleFileChange = (e) => {
-        const files = Array.from(e.target.files);
-        setSelectedFiles(prev => [...prev, ...files]); // formData update
-    };
-
-
-    // Tovar yaratish
-    const handleSubmit = async (formData) => {
-        const res = await fetch("https://1b91559cc9edc1c6.mokky.dev/card", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(formData)
-        });
-        const data = await res.json();
-        setCreatedProductId(data.id); // API dan kelgan avtomatik ID
-    };
 
 
 
-    // --- Category selector submit ---
-    const handleCategorySubmit = () => {
-        setCategorySelected(true);
-    };
+
 
     // --- Editor ref ---
     const uzbekEditorRef = useRef(null);
@@ -177,7 +194,37 @@ export default function StepOn({ formData, setFormData }) {
                             </div>
                         </div>
                         {!categorySelected && (
-                            <CategorySelector onSubmit={handleCategorySubmit} />
+                            <CategorySelector
+                                onSubmit={handleCategorySubmit}
+                                defaultValues={categoryValues} // tanlangan qiymatlar qayta ochilganda chiqadi
+                            />
+                        )}
+
+
+                        {categorySelected && (
+                            <div className="mt-4">
+                                {/* Breadcrumb ko‘rinishida */}
+                                <div className="text-gray-900 text-sm font-normal">
+                                    {categoryPath.map((item, i) => (
+                                        <span key={i} className="inline-flex items-center">
+                                            <span>{item}</span>
+                                            {i < categoryPath.length - 1 && (
+                                                <span className="mx-2 text-gray-400">{'>'}</span>
+                                            )}
+                                        </span>
+                                    ))}
+                                </div>
+
+                                {/* O'zgartirish tugmasi */}
+                                <div className="mt-3">
+                                    <button
+                                        onClick={() => handleCategorySubmit(null)}
+                                        className="w-[120px] h-[40px] bg-black text-white rounded"
+                                    >
+                                        O‘zgartirish
+                                    </button>
+                                </div>
+                            </div>
                         )}
                     </div>
 
@@ -297,7 +344,7 @@ export default function StepOn({ formData, setFormData }) {
 
                                 {/* Select */}
                                 <Select
-                                    value={countryDisabled ? null : country}
+                                    value={countryDisabled ? undefined : country}
                                     onChange={(value) => setCountry(value)}
                                     placeholder="Mamlakatni tanlang"
                                     style={{ width: 380, height: 45 }}
@@ -373,7 +420,7 @@ export default function StepOn({ formData, setFormData }) {
                                 </div>
 
                                 <Select
-                                    value={brandDisabled ? null : brand}
+                                    value={brandDisabled ? undefined : brand}
                                     onChange={(v) => setBrand(v)}
                                     placeholder="Brendni tanlang"
                                     style={{ width: 380, height: 45 }}

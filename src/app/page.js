@@ -12,20 +12,26 @@ const ProductManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState("id");
 
-  // 🔹 API'dan ma'lumotlarni olish
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         const res = await fetch("https://1b91559cc9edc1c6.mokky.dev/card");
         const data = await res.json();
 
-        // API ma'lumotlarini frontend formatiga o'tkazish
+        // ✅ localStorage'dagi rasmlarni olish
+        const savedImages = JSON.parse(localStorage.getItem("productImages")) || {};
+
+        // API + localStorage ma'lumotlarini birlashtirish
         const formattedData = data.map((item) => {
           const status = determineStatus();
+
           return {
             id: item.id,
             title: item.nameUz || "Nomi mavjud emas",
-            image: extractImageFromDescription(item.uzbekDescription1) || "https://via.placeholder.com/204x271?text=Rasm+mavjud+emas",
+            image:
+              (savedImages[item.id] && savedImages[item.id][0]) || // ✅ localStorage rasm
+              extractImageFromDescription(item.uzbekDescription1) ||
+              "https://via.placeholder.com/204x271?text=Rasm+mavjud+emas",
             status: status,
             statusColor: getStatusColor(status),
             rating: "0.00",
@@ -36,12 +42,12 @@ const ProductManagement = () => {
             damaged: "0",
             category: item.categorySelected ? "Kategoriya mavjud" : "Kategoriya mavjud emas",
             productId: item.id,
-            sku: `SKU${item.id.toString().padStart(6, '0')}`,
+            sku: `SKU${item.id.toString().padStart(6, "0")}`,
             price: "Narxi mavjud emas",
             moderation: item.categorySelected ? "Tekshirildi" : "Incomplete",
             brand: item.brand || "Brend mavjud emas",
             country: item.country || "Mamlakat mavjud emas",
-            guarantee: item.guarantee || "Kafolat mavjud emas"
+            guarantee: item.guarantee || "Kafolat mavjud emas",
           };
         });
 
@@ -53,6 +59,7 @@ const ProductManagement = () => {
     };
     fetchProducts();
   }, []);
+
 
   // Yordamchi funksiyalar
   const extractImageFromDescription = (description) => {
