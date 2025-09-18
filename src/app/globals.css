@@ -37,3 +37,27 @@ body {
   display: none;
   /* Chrome, Safari */
 }
+
+/* global.css yoki componentga style tag ichida */
+.scrollbar-thin::-webkit-scrollbar {
+  height: 3px;
+  /* Horizontal scrollbar balandligi */
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: #999;
+  /* Thumb rangi */
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background-color: #f1f1f1;
+  /* Track rangi */
+}
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+  /* Firefox uchun */
+  scrollbar-color: #999 #f1f1f1;
+  /* thumb va track rangi */
+}
